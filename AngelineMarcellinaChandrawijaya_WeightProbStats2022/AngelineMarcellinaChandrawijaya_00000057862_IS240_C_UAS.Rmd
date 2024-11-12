@@ -1,0 +1,317 @@
+---
+output:
+  html_document: 
+    number_sections: yes
+  pdf_document: 
+    fig_height: 4.5
+    fig_width: 6
+    highlight: tango
+    number_sections: yes
+    toc_depth: 4
+---
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Statistika Deskriptif
+
+```{r, message=FALSE, warning=FALSE}
+
+#### Panggil semua package yang diperlukan.
+library(readxl) #membaca file Excel
+library(nortest) #uji normalitas
+library(dplyr)
+library(qcc)
+library("car") #levene test
+
+##membaca excel
+
+project <- readxl::read_excel("jawaban.xlsx", sheet = "FINAL")
+
+#Menampilkan struktur data 
+str(project)
+#Menampilkan 6 data pertama
+head(project)
+#Menampilkan 6 data terakhir
+tail(project)
+
+#Mengubah setiap data karakter menjadi factor
+project$kelamin<- as.factor(project$kelamin)
+project$`Pengaruh atau tidak`<- as.factor(project$`Pengaruh atau tidak`)
+
+
+#Memastikan data yang diubah sudah menjadi factor (recheck)
+str(project)
+
+#statistika deskriptif untuk data numerik
+summary(project$Umur)
+summary(project$BB)
+summary(project$Nominal)
+summary(project$Sebelum)
+summary(project$Sesudah) 
+
+```
+
+## statistika deskriptif teknik grafik
+```{r}
+
+#frekuensi setiap data kategorikal
+(fkelamin <- table(project$kelamin))
+(ya_atau_tidak <- table(project$`Pengaruh atau tidak`))
+
+#Frekuensi untuk setiap data numerik
+(frekuensi0 <- table(project$Umur)) 
+(frekuensi1 <- table(project$BB))
+(frekuensi2 <- table(project$Nominal)) 
+(frekuensi3 <- table(project$Sebelum))
+(frekuensi4 <- table(project$Sesudah))
+
+
+#grafik  barplot untuk kategorikal
+judul_kelamin <- "Distribusi Jenis kelamin  oleh Angeline Marcellina Chandrawijaya 00000057862 \n"
+
+barplot(fkelamin, main = judul_kelamin, cex.main = 0.9, col=c("yellow","grey"))
+
+
+#judul dan juga grafik barplot untuk data numerik
+
+warna <- c("green", "yellow", "red", "pink", "green")
+
+
+judul0 <- "Distribusi umur  oleh Angeline Marcellina Chandrawijaya 00000057862 \n"
+judul1 <- "Distribusi berat badan  oleh Angeline Marcellina Chandrawijaya 00000057862 \n"
+judul2 <- "Distribusi nominal untuk membeli camilan oleh Angeline Marcellina Chandrawijaya 00000057862 \n"
+judul3 <- "Distribusi mengemil sebelum pandemi oleh Angeline Marcellina Chandrawijaya 00000057862 \n"
+judul4 <- "Distribusi mengemil sesudah pandemi oleh Angeline Marcellina Chandrawijaya 00000057862 \n"
+
+
+barplot(frekuensi0, main = judul0,cex.main = 0.9, col = warna)
+barplot(frekuensi1, main = judul1,cex.main = 0.9, col = warna) 
+barplot(frekuensi2, main = judul2)
+barplot(frekuensi3, main = judul3,cex.main = 0.9, col = warna)
+barplot(frekuensi4, main = judul4,cex.main = 0.9, col = warna)
+
+
+#grafik boxplot untuk data numerik
+boxplot(project$Umur, main = judul0)
+boxplot(project$BB, main = judul1)
+boxplot(project$Nominal, main = judul2)
+boxplot(project$Sebelum, main = judul3)
+boxplot(project$Sesudah, main = judul4)
+```
+
+
+#test histograph untuk data numerik
+
+hist(project$Umur)
+hist(project$BB)
+hist(project$Nominal)
+hist(project$Sebelum)
+hist(project$Sesudah) 
+
+```
+
+#uji test
+
+```{r pressure, echo=FALSE}
+#hipotesis 1
+
+#H0: tidak ada hubungannya terhadap umur seseorang terhadap kebiasaan mengemilnya selama masa pandemi 
+#H1: ada hubungannya terhadap umur seseorang terhadap kebiasaan mengemilnya selama masa pandemi 
+
+(sehat_habis_pandemi <- table(project$`Umur`, project$`Pengaruh atau tidak`)) 
+sehat_habis_pandemi/NROW(data)
+(ctsehat <- chisq.test(sehat_habis_pandemi)) 
+
+# p-value = 0.5526 lebih besar dari 0.05, sehingga tidak terdapat cukup bukti untuk menolak H0 dari hasil uji ctest karena hasil p-value menunjukkan lebih besar dari alpha (0.05), maka tidak ada hubungannya antara umur seseorang terhadap kebiasaan mengemilnya selama masa pandemi.
+
+#hipotesis 2
+#a------------------
+#H0: Tidak terdapat hubungannya antara berat badan mahasiswa yang mengalami kenaikan selama masa pandemi dengan pola mengemil mahasiswa selama pandemi
+
+#H1: Terdapat hubungannya antara berat badan mahasiswa yang mengalami kenaikan selama masa pandemi dengan pola mengemil mahasiswa selama pandemi
+
+
+Iya <- project[project$`Pengaruh atau tidak` == "Ya" ,]
+Tidak <- project[project$`Pengaruh atau tidak` == "Tidak" ,]
+
+
+
+yes <- Iya$Sesudah [c(1:24)] ## misahin data mu
+no <- Tidak$Sesudah[c(1:24)] ## misahin datamu
+
+
+
+(selama <- data.frame(yes, no))
+str(selama)
+
+shapiro.test(yes)
+shapiro.test(no)
+
+#b-------------
+#hitung mean selama untuk masing-masing jenis pendapat mahasiswa antara iya atau tidak 
+
+apply(selama, 2, mean)
+
+#stack data agar R bisa memisahkan data berdasarkan pendapat mahasiswa antara iya atau tidak 
+
+s.selama <- stack(selama)
+
+boxplot(values ~ ind, data = s.selama, horizontal = TRUE)
+
+#cek varians
+
+apply(selama, 2, var)
+
+#variannya tidak mendekati karena 
+
+##     yes       no 
+##3.217391 6.717391 
+
+# hitung nilai CV
+
+cv <- function(x){
+cv <- sd(x)/mean(x)
+return (cv)
+}
+apply(selama, 2, cv)
+
+
+#cv nya tidak mendekati karena
+
+##      yes        no 
+##0.2759552 0.4146869
+
+#c------------
+
+#uji normalitas
+
+apply(selama, 2, shapiro.test)
+
+#kedua jenis data pendapat mahasiswa antara iya atau tidak, sudah normal
+
+#hitung varians
+
+apply(selama, 2, var, na.rm = TRUE)
+
+#variannya tidak mendekati karena 
+
+##     yes       no 
+##3.217391 6.717391 
+
+#hitung cv
+
+cv <- function(x){
+  cv <- sd(x, na.rm = TRUE)/mean(x, na.rm = TRUE)
+  return (cv)
+}
+apply(selama, 2, cv)
+
+#cv nya tidak mendekati karena
+
+##      yes        no 
+##0.2759552 0.4146869
+
+
+#Levene Test   
+
+leveneTest(s.selama$values~s.selama$ind)
+
+#ANOVA Test
+results <- aov(s.selama$values ~ s.selama$ind)
+summary(results)
+
+# Nilai p-value 0.699, sehingga tidak terdapat cukup bukti untuk mwnolak h0 dari hasil uji karena p valuenya diatas 0,05, kemudian dengan hasil uji yang telah dinyatakan sebelumnya, Tidak terdapat hubungannya antara berat badan mahasiswa yang mengalami kenaikan selama masa pandemi dengan pola mengemil mahasiswa selama pandemi
+
+
+
+
+#Hipotesis 3
+
+#H0: tidak ada hubungannya antara jumlah kebiasaan mengemil seseorang setiap minggu sebelum ma  sa pandemi 
+#H1: ada hubungannya antara jumlah kebiasaan mengemil seseorang setiap minggu setelah masa pandemi 
+
+shapiro.test(project$Sebelum)
+shapiro.test(project$Sesudah) 
+
+(wta1<- wilcox.test(project$Sebelum, project$Sesudah))
+#  p-value = 7.054e-09 lebih kecil dari 0.05, sehingga terdapat cukup bukti untuk menolak H0 karena dari hasil uji willcox p-value menunjukkan lebih kecil dari alpha (0.05), maka ada hubungannya antara jumlah kebiasaan mengemil seseorang setelah pandemi.
+
+#Hipotesis 3
+
+#H0: tidak terdapat hubungan antara berat badan seseorang selama masa pandemi 
+#H1: terdapat hubungan antara berat badan seseorang selama masa pandemi 
+
+MultilinearRegresion <- lm (project$Sesudah ~ project$BB)
+summary(MultilinearRegresion)
+
+
+##################################################################################
+
+(wta2 <- wilcox.test(project$Sesudah, project$BB))
+
+shapiro.test(project$Sesudah)
+shapiro.test(project$BB)
+
+(wta2 <- wilcox.test(project$Sesudah, project$BB))
+
+#p-value = < 2.2e-16 lebih kecil dari alpha, sehingga terdapat cukup bukti untuk menolak H0 dari hasil uji karena p value nya lebih kecil dari alpha. maka terdapat hubungan antara berat badan seseorang selama masa pandemi 
+
+#kalau pvalue lebih kecil maka h0 akan ditolak dan jawabannya cenderung ke h1 
+
+#hipotesis 3
+
+#H0: Tidak terdapat hubungan antara umur dan kelamin yang mempengaruhi berat badan seseorang selama masa pandemi 
+#H1: Terdapat hubungan antara umur dan kelamin yang mempengaruhi berat badan seseorang selama masa pandemi 
+
+#create new data frame that contains only the variables we would like to use to
+data <- project[ , c("BB", "Umur", "kelamin")]
+
+#view first six rows of new data frame
+head(data)
+
+#EXAMINE DATA
+pairs(data, pch = 18, col = "steelblue")
+
+#generate the pairs plot
+ggpairs(data)
+
+#FIT THE MODEL
+model <- lm(BB ~ Umur + kelamin, data = data)
+
+#CHECK MODEL ASSUMPTIONS
+#create histogram to check for residual normality
+hist(residuals(model), col = "steelblue")
+
+#create fitted value vs residual plot
+plot(fitted(model), residuals(model))
+
+#add horizontal line at 0
+abline(h = 0, lty = 2)
+
+#VIEW MODEL SUMMARY
+summary(model)
+plot(data)
+
+MultilinearRegresion <- lm (project$Umur~ project$kelamin)
+summary(MultilinearRegresion)
+
+shapiro.test(project$Umur)
+shapiro.test(project$kelamin)
+
+(wta3 <- wilcox.test(project$BB, project$kelamin))
+
+
+#p-value < 2.2e-16 lebih kecil dari 0.05, sehingga terdapat cukup bukti untuk menolak H0 dari hasil uji, maka terdapat hubungan antara umur yang mempengaruhi berat badan seseorang selama masa pandemi
+
+## tabulasi data
+table(project$Umur, project$Sesudah)
+table(project$Sebelum, project$Sesudah)
+table(project$BB, project$Sesudah)
+table(project$Umur, project$BB)
+
+
+
+
+```
